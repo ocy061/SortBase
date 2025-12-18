@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+*.js
+*.js.map
+
+# Electron build output
+out/
+release/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+electron-error.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# User data (wichtig: lokale Inventardaten nicht committen!)
+inventar-data.json
+
+# Env files
+.env
+.env.local
