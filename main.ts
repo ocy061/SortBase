@@ -73,12 +73,12 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'dist', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
-  win.loadFile('dist/index.html');
+  win.loadFile('index.html');
 }
 
 // === IPC HANDLERS: Main <-> Renderer Communication ===

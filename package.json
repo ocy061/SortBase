@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "build": "npx tsc && npx webpack",
+    "build": "tsc && webpack",
     "start": "npm run build && electron .",
+    "dev": "npm run build && electron . --enable-logging",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
