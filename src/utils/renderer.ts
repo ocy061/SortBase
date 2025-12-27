@@ -43,7 +43,7 @@ export class Renderer {
   async renderListOverview() {
     document.body.innerHTML = `
       <div id="app">
-        ${ComponentBuilders.createHeader('📝 Inventar-Verwaltung', [])}
+        ${ComponentBuilders.createHeader('📝 SortBase', [])}
         <main class="main">
           ${ComponentBuilders.createSearchBar(
             'search-list',
@@ -824,7 +824,7 @@ export class Renderer {
     cancelBtn?.addEventListener('click', () => dialog.remove());
   }
 
-  private showEditItemDialog(list: InventoryList, item: InventoryItem, listId: string) {
+  private showEditItemDialog(list: InventoryList, item: InventoryItem, listId: string, afterSave?: () => void) {
     const dialog = document.createElement('div');
     dialog.className = 'modal-overlay';
     dialog.innerHTML = `
@@ -924,7 +924,11 @@ export class Renderer {
 
       await this.state.saveData();
       dialog.remove();
-      await this.renderListDetail(listId);
+      if (afterSave) {
+        afterSave();
+      } else {
+        await this.renderListDetail(listId);
+      }
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
@@ -1083,7 +1087,9 @@ export class Renderer {
     });
     document.getElementById('back-list')?.addEventListener('click', () => this.renderListDetail(listId));
     // Wire edit button to open edit dialog
-    document.getElementById('edit-item-btn')?.addEventListener('click', () => this.showEditItemDialog(list!, item!, listId));
+    document.getElementById('edit-item-btn')?.addEventListener('click', () => {
+      this.showEditItemDialog(list!, item!, listId, () => this.renderItemDetail(listId, itemId));
+    });
     
     // Wire navigation buttons
     document.getElementById('prev-item-btn')?.addEventListener('click', () => {

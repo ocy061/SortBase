@@ -4,13 +4,15 @@
  */
 
 import { app, BrowserWindow, ipcMain } from 'electron';
+import { autoUpdater } from 'electron-updater';
+import log from 'electron-log';
 import * as path from 'path';
 import * as fs from 'fs';
 
 import { InventoryList } from './src/models';
 
 // Pfad zur JSON-Datei im User-Data-Verzeichnis
-const DATA_PATH = path.join(app.getPath('userData'), 'inventar-data.json');
+const DATA_PATH = path.join(app.getPath('userData'), 'sortbase-data.json');
 
 
 // === TYPE DEFINITIONS ===
@@ -63,6 +65,67 @@ function saveData(data: InventarData) {
   }
 }
 
+// === AUTO-UPDATE ===
+
+const UPDATE_FEED_URL = process.env.SORTBASE_UPDATE_URL;
+let autoUpdaterWired = false;
+
+function setupAutoUpdates(win: BrowserWindow) {
+  if (!app.isPackaged) {
+    log.info('Auto-Updates werden im Development-Modus übersprungen.');
+    return;
+  }
+
+  autoUpdater.logger = log;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  if (UPDATE_FEED_URL) {
+    autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_FEED_URL });
+  }
+
+  ipcMain.removeHandler('check-for-updates');
+  ipcMain.handle('check-for-updates', async () => {
+    if (!app.isPackaged) return { status: 'dev-skip' };
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      return { status: 'checking', version: result?.updateInfo?.version };
+    } catch (err: any) {
+      log.error('Update check failed', err);
+      return { status: 'error', message: err?.message ?? String(err) };
+    }
+  });
+
+  if (!autoUpdaterWired) {
+    autoUpdater.on('update-available', (info) => {
+      if (!win.isDestroyed()) win.webContents.send('update-available', info);
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+      if (!win.isDestroyed()) win.webContents.send('update-not-available', info);
+    });
+
+    autoUpdater.on('download-progress', (progress) => {
+      if (!win.isDestroyed()) win.webContents.send('update-download-progress', progress.percent);
+    });
+
+    autoUpdater.on('update-downloaded', (info) => {
+      if (!win.isDestroyed()) win.webContents.send('update-downloaded', info);
+    });
+
+    autoUpdater.on('error', (err) => {
+      log.error('Auto-Update error', err);
+      if (!win.isDestroyed()) win.webContents.send('update-error', err?.message ?? String(err));
+    });
+
+    autoUpdaterWired = true;
+  }
+
+  autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+    log.error('checkForUpdatesAndNotify failed', err);
+  });
+}
+
 // === ELECTRON WINDOW ===
 
 /** Erstellt Hauptfenster mit festgelegten Dimensionen und Sicherheitseinstellungen */
@@ -79,6 +142,8 @@ function createWindow() {
     },
   });
   win.loadFile('index.html');
+
+  setupAutoUpdates(win);
 }
 
 // === IPC HANDLERS: Main <-> Renderer Communication ===

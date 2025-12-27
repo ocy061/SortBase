@@ -40,7 +40,7 @@ export class StateManager {
   /** Lädt Daten aus JSON-Datei und stellt Level-Hierarchie wieder her */
   async loadData() {
     try {
-      const data = await window.inventarAPI.loadLists();
+      const data = await (window.inventarAPI?.loadLists() ?? Promise.reject('inventarAPI not available'));
       if (data && Array.isArray(data.lists)) {
         this.lists = data.lists;
         this.normalizeLevels(this.lists, 0);
@@ -68,7 +68,7 @@ export class StateManager {
   /** Speichert alle Daten und Einstellungen in JSON-Datei */
   async saveData() {
     try {
-      await window.inventarAPI.saveLists({
+      await (window.inventarAPI?.saveLists({
         lists: this.lists,
         sortOptions: {
           listSortMode: this.listSortMode,
@@ -76,7 +76,7 @@ export class StateManager {
           detailViewState: this.detailViewState,
           listSearchQuery: this.listSearchQuery,
         },
-      });
+      }) ?? Promise.reject('inventarAPI not available'));
     } catch (error) {
       console.error('Fehler beim Speichern der Daten:', error);
     }

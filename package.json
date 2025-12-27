@@ -1,23 +1,97 @@
 {
-  "name": "projekt-1---inventar-app",
+  "name": "sortbase",
+  "productName": "SortBase",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
     "build": "tsc && webpack",
     "start": "npm run build && electron .",
     "dev": "npm run build && electron . --enable-logging",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:all": "npm run build && electron-builder --mac --win",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "build": {
+    "appId": "com.sortbase.app",
+    "productName": "SortBase",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    },
+    "dmg": {
+      "title": "${productName} ${version}"
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "SortBase - Inventar- und Lagerverwaltungssystem",
   "devDependencies": {
     "@types/node": "^22.15.23",
     "electron": "^36.3.1",
+    "electron-builder": "^26.0.12",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.3",
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.6.2"
   }
 }

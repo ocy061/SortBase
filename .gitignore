@@ -29,6 +29,7 @@ Thumbs.db
 .idea/
 
 # User data (wichtig: lokale Inventardaten nicht committen!)
+sortbase-data.json
 inventar-data.json
 
 # Env files

@@ -24,6 +24,14 @@ declare global {
       loadLists: () => Promise<InventarData>;
       saveLists: (data: InventarData) => Promise<boolean>;
     };
+    updateAPI?: {
+      checkForUpdates: () => Promise<any>;
+      onUpdateAvailable: (callback: (info: any) => void) => void;
+      onUpdateNotAvailable: (callback: (info: any) => void) => void;
+      onDownloadProgress: (callback: (percent: number) => void) => void;
+      onUpdateDownloaded: (callback: (info: any) => void) => void;
+      onUpdateError: (callback: (message: string) => void) => void;
+    };
   }
 }
 
@@ -36,6 +44,26 @@ declare global {
 async function init() {
   const state = new StateManager();
   const renderer = new Renderer(state);
+
+  if (window.updateAPI) {
+    window.updateAPI.onUpdateAvailable((info) => {
+      console.info('Update verfügbar:', info?.version ?? 'unbekannt');
+    });
+    window.updateAPI.onUpdateNotAvailable(() => {
+      console.info('Keine Updates verfügbar.');
+    });
+    window.updateAPI.onDownloadProgress((percent) => {
+      console.info(`Update-Download: ${percent.toFixed(1)}%`);
+    });
+    window.updateAPI.onUpdateDownloaded(() => {
+      alert('Update geladen. Bitte die App neu starten, um es zu installieren.');
+    });
+    window.updateAPI.onUpdateError((message) => {
+      console.error('Update-Fehler:', message);
+    });
+
+    window.updateAPI.checkForUpdates().catch((err) => console.error('Update-Check fehlgeschlagen', err));
+  }
 
   try {
     await state.loadData();

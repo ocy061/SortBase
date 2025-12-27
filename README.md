@@ -1,4 +1,4 @@
-# Inventar App
+# SortBase
 
 Dieses Projekt ist eine Electron-Desktop-App mit TypeScript. Ziel ist die Verwaltung von persönlichen Gegenständen und Sammlerstücken. Die App wird lokal ausgeführt und speichert Daten lokal, ist aber für spätere Synchronisation und Mehrbenutzerfähigkeit erweiterbar.
 
