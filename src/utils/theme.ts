@@ -367,6 +367,9 @@ export class StyleInjector {
         max-height: 200px;
         background-color: ${Theme.colors.background};
         border: 1px solid ${Theme.colors.border};
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .card-tile__placeholder {
@@ -388,8 +391,9 @@ export class StyleInjector {
       .card-tile__image img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         display: block;
+        background-color: ${Theme.colors.background};
       }
 
       .card-tile__content {

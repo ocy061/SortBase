@@ -263,7 +263,7 @@ export class Renderer {
     cancelBtn?.addEventListener('click', () => dialog.remove());
   }
 
-  private showEditListDialog(list: InventoryList) {
+  private showEditListDialog(list: InventoryList, onSaved?: () => Promise<void> | void) {
     const dialog = document.createElement('div');
     dialog.className = 'modal-overlay';
     dialog.innerHTML = `
@@ -315,7 +315,11 @@ export class Renderer {
       
       await this.state.saveData();
       dialog.remove();
-      await this.updateListsUI();
+      if (onSaved) {
+        await onSaved();
+      } else {
+        await this.updateListsUI();
+      }
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
@@ -601,7 +605,7 @@ export class Renderer {
           const card = ComponentBuilders.createListCard(
             sublist,
             () => this.renderListDetail(sublist.id),
-            () => this.showEditListDialog(sublist),
+            () => this.showEditListDialog(sublist, () => this.renderListDetail(list.id)),
             () => this.showDeleteSublistConfirm(list, sublist),
           );
           sublistsContainer.appendChild(card);
@@ -1030,8 +1034,8 @@ export class Renderer {
           <div class="card" style="max-width: 600px; margin: 0 auto;">
             <div style="display: grid; gap: ${Theme.spacing.md};">
               ${item.imageUrl ? `
-                <div style="width: 100%; border-radius: ${Theme.borderRadius.md}; overflow: hidden; max-height: 320px;">
-                  <img src="${item.imageUrl}" alt="Bild" style="width: 100%; height: 100%; object-fit: cover;" />
+                <div style="width: 100%; border-radius: ${Theme.borderRadius.md}; overflow: hidden; max-height: 320px; background: ${Theme.colors.background}; display: flex; align-items: center; justify-content: center;">
+                  <img src="${item.imageUrl}" alt="Bild" style="width: 100%; height: 100%; object-fit: contain;" />
                 </div>
               ` : ''}
               <div style="display:flex; justify-content: space-between; align-items: center;">

@@ -33,12 +33,12 @@ export class ImageHandler {
         />
         <div style="font-size: 0.8rem; color: #6b7280; margin-top: 6px;">Optional</div>
         ${currentImageUrl ? `
-          <div id="image-preview" style="margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px;">
-            <img id="preview-img" src="${currentImageUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
+          <div id="image-preview" style="margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+            <img id="preview-img" src="${currentImageUrl}" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
         ` : `
-          <div id="image-preview" style="display: none; margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px;">
-            <img id="preview-img" style="width: 100%; height: 100%; object-fit: cover;" />
+          <div id="image-preview" style="display: none; margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+            <img id="preview-img" style="width: 100%; height: 100%; object-fit: contain;" />
           </div>
         `}
         <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="margin-top: 8px; ${currentImageUrl ? '' : 'display: none;'}">Bild entfernen</button>
@@ -84,7 +84,7 @@ export class ImageHandler {
             const img = document.createElement('img');
             img.id = 'preview-img';
             img.src = base64;
-            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+            img.style.cssText = 'width: 100%; height: 100%; object-fit: contain;';
             preview.appendChild(img);
           }
         }
