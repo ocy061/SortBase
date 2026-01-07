@@ -28,20 +28,25 @@ export class ImageHandler {
           id="image-input" 
           type="file" 
           accept="image/*" 
-          class="form-group__input"
-          style="padding: 6px;"
+          style="display: none;"
         />
-        <div style="font-size: 0.8rem; color: #6b7280; margin-top: 6px;">Optional</div>
+        <label for="image-input" class="btn-secondary" style="display: inline-block; cursor: pointer; margin-bottom: 6px;">
+          🖼️ Bild auswählen
+        </label>
+        <div id="image-status" style="font-size: 0.8rem; color: #6b7280; margin-top: 6px;">
+          ${currentImageUrl ? 'Bild vorhanden' : 'Optional'}
+        </div>
         ${currentImageUrl ? `
-          <div id="image-preview" style="margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+          <div id="image-preview" style="margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative;">
             <img id="preview-img" src="${currentImageUrl}" style="width: 100%; height: 100%; object-fit: contain;" />
+            <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; font-size: 16px; border-radius: 6px;">🗑️</button>
           </div>
         ` : `
-          <div id="image-preview" style="display: none; margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+          <div id="image-preview" style="display: none; margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative;">
             <img id="preview-img" style="width: 100%; height: 100%; object-fit: contain;" />
+            <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; font-size: 16px; border-radius: 6px; display: none;">🗑️</button>
           </div>
         `}
-        <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="margin-top: 8px; ${currentImageUrl ? '' : 'display: none;'}">Bild entfernen</button>
       </div>
     `;
   }
@@ -69,6 +74,7 @@ export class ImageHandler {
     const preview = document.getElementById('image-preview');
     const previewImg = document.getElementById('preview-img') as HTMLImageElement;
     const removeBtn = document.getElementById('remove-image-btn') as HTMLButtonElement;
+    const imageStatus = document.getElementById('image-status');
 
     if (!input) return;
 
@@ -76,7 +82,7 @@ export class ImageHandler {
       if (input.files?.length) {
         const base64 = await this.fileToBase64(input.files[0]);
         if (preview) {
-          preview.style.display = 'block';
+          preview.style.display = 'flex';
           if (previewImg) {
             previewImg.src = base64;
           } else {
@@ -88,7 +94,8 @@ export class ImageHandler {
             preview.appendChild(img);
           }
         }
-        if (removeBtn) removeBtn.style.display = 'inline-block';
+        if (removeBtn) removeBtn.style.display = 'block';
+        if (imageStatus) imageStatus.textContent = 'Bild vorhanden';
       }
     });
 
@@ -101,6 +108,7 @@ export class ImageHandler {
         if (previewImg) previewImg.src = '';
         // Hide remove button again
         removeBtn.style.display = 'none';
+        if (imageStatus) imageStatus.textContent = 'Optional';
         // Emit a custom event so callers can react (e.g., clear currentImage)
         const ev = new CustomEvent('image-cleared');
         removeBtn.dispatchEvent(ev);
@@ -114,5 +122,138 @@ export class ImageHandler {
   static createImageElement(imageUrl: string | undefined, width: string = '100px', height: string = '100px'): string {
     if (!imageUrl) return '';
     return `<img src="${imageUrl}" style="width: ${width}; height: ${height}; object-fit: cover; border-radius: 6px; margin-right: 12px;" />`;
+  }
+
+  /**
+   * Erstellt Galerie-Input für mehrere Bilder
+   */
+  /**
+   * Erstellt Galerie-Input für mehrere Bilder
+   */
+  static createMultiImageGallery(currentImageUrls: string[] = []): string {
+    return `
+      <div class="form-group">
+        <label class="form-group__label">Bilder</label>
+        <input 
+          id="multi-image-input" 
+          type="file" 
+          accept="image/*" 
+          multiple
+          style="display: none;"
+        />
+        <label for="multi-image-input" class="btn-secondary" style="display: inline-block; cursor: pointer; margin-bottom: 6px;">
+          🖼️ Bilder auswählen
+        </label>
+        <div id="image-count-display" style="font-size: 0.8rem; color: #6b7280; margin-top: 6px;">
+          ${currentImageUrls.length > 0 ? `${currentImageUrls.length} Bild${currentImageUrls.length > 1 ? 'er' : ''} hinzugefügt` : 'Optional - mehrere Bilder möglich. Klick auf ein Bild zum Löschen.'}
+        </div>
+        <div id="image-gallery" style="display: flex; gap: 16px; margin-top: 12px; overflow-x: auto; padding-bottom: 8px;">
+          ${currentImageUrls.map((url, idx) => `
+            <div class="gallery-item" data-index="${idx}" style="position: relative; cursor: pointer; flex-shrink: 0; border-radius: 8px; overflow: hidden;">
+              <img src="${url}" style="width: 140px; height: 140px; object-fit: cover; border-radius: 8px; border: 2px solid transparent; transition: border 0.2s;" />
+              <button type="button" class="delete-image-btn" data-index="${idx}" style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 6px; width: 40px; height: 40px; cursor: pointer; font-weight: bold; display: none; z-index: 10; font-size: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); transition: all 0.2s ease; padding: 0; line-height: 1;">🗑️</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Lädt mehrere Bilder aus Input und fügt zur Galerie hinzu
+   */
+  static async loadMultipleImagesFromInput(inputId: string = 'multi-image-input'): Promise<string[]> {
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (!input?.files?.length) return [];
+    
+    try {
+      const images: string[] = [];
+      for (let i = 0; i < input.files.length; i++) {
+        const base64 = await this.fileToBase64(input.files[i]);
+        images.push(base64);
+      }
+      return images;
+    } catch (error) {
+      console.error('Fehler beim Laden der Bilder:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Setup interaktive Galerie mit Lösch-Funktionalität
+   */
+  static setupMultiImageGallery(existingImages: string[] = [], onImagesChange?: (images: string[]) => void): string[] {
+    const gallery = document.getElementById('image-gallery');
+    const input = document.getElementById('multi-image-input') as HTMLInputElement;
+    const imageCountDisplay = document.getElementById('image-count-display');
+    let imageList = [...existingImages];
+
+    if (!gallery) return imageList;
+
+    const updateGallery = () => {
+      gallery.innerHTML = imageList
+        .map((url, idx) => `
+          <div class="gallery-item" data-index="${idx}" style="position: relative; cursor: pointer; flex-shrink: 0; border-radius: 8px; overflow: hidden;">
+            <img src="${url}" style="width: 140px; height: 140px; object-fit: cover; border-radius: 8px; border: 2px solid transparent; transition: border 0.2s;" />
+            <button type="button" class="delete-image-btn" data-index="${idx}" style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 6px; width: 40px; height: 40px; cursor: pointer; font-weight: bold; display: none; z-index: 10; font-size: 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); transition: all 0.2s ease; padding: 0; line-height: 1;">🗑️</button>
+          </div>
+        `)
+        .join('');
+
+      // Update image count display
+      if (imageCountDisplay) {
+        imageCountDisplay.textContent = imageList.length > 0 
+          ? `${imageList.length} Bild${imageList.length > 1 ? 'er' : ''} hinzugefügt`
+          : 'Optional - mehrere Bilder möglich. Klick auf ein Bild zum Löschen.';
+      }
+
+      // Attach hover and click handlers to all items
+      document.querySelectorAll('.gallery-item').forEach((item) => {
+        const deleteBtn = item.querySelector('.delete-image-btn') as HTMLButtonElement;
+        item.addEventListener('mouseenter', () => {
+          if (deleteBtn) deleteBtn.style.display = 'block';
+        });
+        item.addEventListener('mouseleave', () => {
+          if (deleteBtn) deleteBtn.style.display = 'none';
+        });
+        
+        // Add hover effect to delete button
+        deleteBtn?.addEventListener('mouseenter', () => {
+          deleteBtn.style.backgroundColor = '#b91c1c';
+          deleteBtn.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.4)';
+        });
+        deleteBtn?.addEventListener('mouseleave', () => {
+          deleteBtn.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+          deleteBtn.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.25)';
+        });
+      });
+
+      document.querySelectorAll('.delete-image-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const idx = parseInt((btn as HTMLButtonElement).getAttribute('data-index') || '0');
+          imageList.splice(idx, 1);
+          updateGallery();
+          if (onImagesChange) onImagesChange(imageList);
+        });
+      });
+
+      if (onImagesChange) onImagesChange(imageList);
+    };
+
+    // Setup file input change
+    if (input) {
+      input.addEventListener('change', async () => {
+        const newImages = await this.loadMultipleImagesFromInput();
+        if (newImages.length > 0) {
+          imageList = [...imageList, ...newImages];
+          updateGallery();
+        }
+        input.value = ''; // Reset file input
+      });
+    }
+
+    updateGallery();
+    return imageList;
   }
 }

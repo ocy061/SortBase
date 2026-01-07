@@ -738,7 +738,7 @@ export class Renderer {
           <h2 class="modal__title">Neuen Artikel hinzufügen</h2>
         </div>
         <form id="inline-form" class="modal__content form">
-          ${ImageHandler.createImageInput()}
+          ${ImageHandler.createMultiImageGallery()}
           <div class="form-group">
             <label class="form-group__label">Artikelname</label>
             <input id="item-name" type="text" required maxlength="50" class="form-group__input" />
@@ -768,12 +768,17 @@ export class Renderer {
     `;
 
     document.body.appendChild(dialog);
-    ImageHandler.setupImagePreview('image-input');
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
     const addPropertyBtn = dialog.querySelector('#add-property-btn') as HTMLButtonElement;
     const propertiesContainer = dialog.querySelector('#properties-container') as HTMLDivElement;
+
+    // Setup multi-image gallery with callback to track changes
+    let imageUrls: string[] = [];
+    imageUrls = ImageHandler.setupMultiImageGallery(imageUrls, (images) => {
+      imageUrls = images;
+    });
 
     let propertyIndex = 0;
 
@@ -797,7 +802,6 @@ export class Renderer {
       const name = (dialog.querySelector('#item-name') as HTMLInputElement).value.trim();
       const purchasePrice = parseFloat((dialog.querySelector('#item-purchase') as HTMLInputElement).value) || NaN;
       const currentValue = parseFloat((dialog.querySelector('#item-value') as HTMLInputElement).value) || NaN;
-      const imageUrl = await ImageHandler.loadImageFromInput('image-input');
 
       const properties: Record<string, string | number> = {};
       propertiesContainer.querySelectorAll('div').forEach(row => {
@@ -812,7 +816,7 @@ export class Renderer {
       const newItem: InventoryItem = {
         id: Renderer.generateId(),
         name,
-        imageUrl: imageUrl || undefined,
+        imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         purchasePrice,
         currentValue,
         createdAt: Renderer.createTimestamp(),
@@ -837,7 +841,7 @@ export class Renderer {
           <h2 class="modal__title">Artikel bearbeiten: "${item.name}"</h2>
         </div>
         <form id="inline-form" class="modal__content form">
-          ${ImageHandler.createImageInput(item.imageUrl)}
+          ${ImageHandler.createMultiImageGallery(item.imageUrls || [])}
           <div class="form-group">
             <label class="form-group__label">Artikelname</label>
             <input id="item-name" type="text" value="${item.name}" required maxlength="50" class="form-group__input" />
@@ -845,12 +849,12 @@ export class Renderer {
           </div>
           <div class="form-group">
             <label class="form-group__label">Kaufpreis in €</label>
-            <input id="item-purchase" type="number" step="0.01" max="9999999999999.99" value="${!isNaN(item.purchasePrice) ? item.purchasePrice : ''}" class="form-group__input" />
+            <input id="item-purchase" type="number" step="0.01" max="9999999999999.99" value="${(typeof item.purchasePrice === 'number' && !isNaN(item.purchasePrice)) ? item.purchasePrice : ''}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Optional</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Aktueller Wert in €</label>
-            <input id="item-value" type="number" step="0.01" max="9999999999999.99" value="${!isNaN(item.currentValue) ? item.currentValue : ''}" class="form-group__input" />
+            <input id="item-value" type="number" step="0.01" max="9999999999999.99" value="${(typeof item.currentValue === 'number' && !isNaN(item.currentValue)) ? item.currentValue : ''}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Optional</div>
           </div>
           <div class="form-group">
@@ -867,22 +871,19 @@ export class Renderer {
     `;
 
     document.body.appendChild(dialog);
-    ImageHandler.setupImagePreview('image-input');
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
     const addPropertyBtn = dialog.querySelector('#add-property-btn') as HTMLButtonElement;
     const propertiesContainer = dialog.querySelector('#properties-container') as HTMLDivElement;
-    const removeImageBtn = dialog.querySelector('#remove-image-btn') as HTMLButtonElement;
+
+    // Setup multi-image gallery with existing images and callback
+    let imageUrls: string[] = item.imageUrls || [];
+    imageUrls = ImageHandler.setupMultiImageGallery(imageUrls, (images) => {
+      imageUrls = images;
+    });
 
     let propertyIndex = 0;
-    let currentImage = item.imageUrl;
-
-    removeImageBtn?.addEventListener('click', () => {
-      currentImage = undefined;
-      const preview = dialog.querySelector('#image-preview') as HTMLDivElement;
-      if (preview) preview.style.display = 'none';
-    });
 
     const addPropertyRow = (key: string = '', value: string = '') => {
       const row = document.createElement('div');
@@ -911,7 +912,6 @@ export class Renderer {
       item.name = (dialog.querySelector('#item-name') as HTMLInputElement).value.trim();
       item.purchasePrice = parseFloat((dialog.querySelector('#item-purchase') as HTMLInputElement).value) || NaN;
       item.currentValue = parseFloat((dialog.querySelector('#item-value') as HTMLInputElement).value) || NaN;
-      const newImage = await ImageHandler.loadImageFromInput('image-input');
 
       const properties: Record<string, string | number> = {};
       propertiesContainer.querySelectorAll('div').forEach(row => {
@@ -924,7 +924,7 @@ export class Renderer {
       });
 
       item.properties = Object.keys(properties).length > 0 ? properties : undefined;
-      item.imageUrl = newImage || currentImage || undefined;
+      item.imageUrls = imageUrls.length > 0 ? imageUrls : undefined;
 
       await this.state.saveData();
       dialog.remove();
@@ -1000,6 +1000,9 @@ export class Renderer {
 
     const breadcrumb = this.state.getListBreadcrumb(listId);
     const profit = DataUtils.calculateProfit(item.purchasePrice, item.currentValue);
+    const hasPurchase = typeof item.purchasePrice === 'number' && !isNaN(item.purchasePrice);
+    const hasValue = typeof item.currentValue === 'number' && !isNaN(item.currentValue);
+    const profitLabel = profit > 0 ? 'Gewinn' : profit < 0 ? 'Verlust' : 'Gewinn/Verlust';
     
     // === NAVIGATION ZWISCHEN ARTIKELN ===
     // Wende gleiche Filter/Sortierung an wie in Listenansicht für konsistente Reihenfolge
@@ -1031,28 +1034,34 @@ export class Renderer {
             )}
           </div>
 
-          <div class="card" style="max-width: 600px; margin: 0 auto;">
+          <div class="card" style="max-width: 900px; margin: 0 auto;">
             <div style="display: grid; gap: ${Theme.spacing.md};">
-              ${item.imageUrl ? `
-                <div style="width: 100%; border-radius: ${Theme.borderRadius.md}; overflow: hidden; max-height: 320px; background: ${Theme.colors.background}; display: flex; align-items: center; justify-content: center;">
-                  <img src="${item.imageUrl}" alt="Bild" style="width: 100%; height: 100%; object-fit: contain;" />
+              ${item.imageUrls && item.imageUrls.length > 0 ? `
+                <div style="width: 100%; border-radius: ${Theme.borderRadius.md}; overflow-x: auto; overflow-y: hidden; max-height: 400px; background: ${Theme.colors.background}; display: flex; align-items: center; gap: ${Theme.spacing.sm}; padding: ${Theme.spacing.xs}; padding-left: calc((100% - 350px) / 2);">
+                  ${item.imageUrls.map((url, idx) => `
+                    <img src="${url}" alt="Bild ${idx + 1}" style="width: 350px; height: 380px; object-fit: contain; flex-shrink: 0; border-radius: ${Theme.borderRadius.sm};" />
+                  `).join('')}
                 </div>
               ` : ''}
               <div style="display:flex; justify-content: space-between; align-items: center;">
                 <div><strong>Name:</strong> ${item.name}</div>
                 <button id="edit-item-btn" class="btn-secondary btn-sm">⚙️ Bearbeiten</button>
               </div>
-              <div>
-                <strong>Kaufpreis:</strong> ${DataUtils.formatCurrency(item.purchasePrice)}
-              </div>
-              <div>
-                <strong>Aktueller Wert:</strong> ${DataUtils.formatCurrency(item.currentValue)}
-              </div>
+              ${hasPurchase ? `
+                <div>
+                  <strong>Kaufpreis:</strong> ${DataUtils.formatCurrency(item.purchasePrice)}
+                </div>
+              ` : ''}
+              ${hasValue ? `
+                <div>
+                  <strong>Aktueller Wert:</strong> ${DataUtils.formatCurrency(item.currentValue)}
+                </div>
+              ` : ''}
               ${!isNaN(profit) ? `
                 <div>
-                  <strong>Gewinn/Verlust:</strong>
+                  <strong>${profitLabel}:</strong>
                   <span style="font-weight: 600; color: ${profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary};">
-                    ${profit > 0 ? '+' : ''}${profit}€
+                    ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}
                   </span>
                 </div>
               ` : ''}

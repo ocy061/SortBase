@@ -1,4 +1,5 @@
 import { Theme } from './theme';
+import { DataUtils } from './dataUtils';
 
 /**
  * ComponentBuilders: Zentralisierte UI-Komponenten-Erstellung
@@ -167,7 +168,7 @@ export class ComponentBuilders {
    * Mit Bild, Titel, Kategorie und Action-Buttons
    */
   static createListCard(
-    item: { id: string; name: string; category?: string; imageUrl?: string },
+    item: { id: string; name: string; category?: string; imageUrl?: string; items?: any[]; sublists?: any[] },
     onView: () => void,
     onEdit: () => void,
     onDelete: () => void,
@@ -175,13 +176,33 @@ export class ComponentBuilders {
     const div = document.createElement('div');
     div.className = 'card-tile card-tile--list';
     div.style.cursor = 'pointer';
+    div.style.display = 'flex';
+    div.style.flexDirection = 'column';
+
+    // Calculate totals from items and sublists
+    const totals = DataUtils.calculateListTotals(item);
+    const hasPurchase = totals.purchasePrice !== undefined;
+    const hasValue = totals.currentValue !== undefined;
+    const hasProfit = totals.profit !== undefined;
+
+    let totalsInfo = '';
+    if (hasPurchase) totalsInfo += `Gekauft: ${DataUtils.formatCurrency(totals.purchasePrice!)} `;
+    if (hasValue) totalsInfo += `Wert: ${DataUtils.formatCurrency(totals.currentValue!)}`;
+    if (hasProfit) {
+      const profit = totals.profit!;
+      const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
+      const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
+      totalsInfo += ` <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+    }
+
     div.innerHTML = `
       ${this.createImageSection(item.imageUrl)}
-      <div class="card-tile__content">
+      <div class="card-tile__content" style="flex-grow: 1;">
         <div class="card-tile__title" style="color: ${Theme.colors.primary};">${item.name}</div>
         ${item.category ? `<div class="card-tile__subtitle">${item.category}</div>` : ''}
+        ${totalsInfo ? `<div class="card-tile__subtitle">${totalsInfo}</div>` : ''}
       </div>
-      <div class="card-tile__actions" style="display: flex; gap: ${Theme.spacing.sm}; justify-content: space-between;">
+      <div class="card-tile__actions" style="display: flex; gap: ${Theme.spacing.sm}; justify-content: space-between; margin-top: auto;">
         <div class="card-tile__badge" onclick="event.stopPropagation();">📂 Liste</div>
         <div style="display: flex; gap: ${Theme.spacing.sm};">
           <button class="btn-secondary btn-sm" data-action="edit">⚙️ Bearbeiten</button>
@@ -213,32 +234,46 @@ export class ComponentBuilders {
    * Mit Bild, Name, Preis-Informationen und Action-Buttons
    */
   static createItemCard(
-    item: { id: string; name: string; purchasePrice: number; currentValue: number; imageUrl?: string },
+    item: { id: string; name: string; purchasePrice: any; currentValue: any; imageUrls?: string[] },
     onView: () => void,
     onEdit: () => void,
     onDelete: () => void,
   ): HTMLElement {
     const div = document.createElement('div');
     div.style.cursor = 'pointer';
-    const profit = item.currentValue - item.purchasePrice;
-    const hasPrice = !isNaN(item.purchasePrice) && !isNaN(item.currentValue);
+    div.style.display = 'flex';
+    div.style.flexDirection = 'column';
+    const hasPurchase = typeof item.purchasePrice === 'number' && !isNaN(item.purchasePrice);
+    const hasValue = typeof item.currentValue === 'number' && !isNaN(item.currentValue);
+    const hasBoth = hasPurchase && hasValue;
+    const profit = hasBoth ? (item.currentValue as number) - (item.purchasePrice as number) : NaN;
+    const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
     let priceInfo = '';
 
-    if (!isNaN(item.purchasePrice)) priceInfo += `Gekauft: ${item.purchasePrice}€ `;
-    if (!isNaN(item.currentValue)) priceInfo += `Wert: ${item.currentValue}€`;
-    if (hasPrice) {
+    if (hasPurchase) priceInfo += `Gekauft: ${DataUtils.formatCurrency(item.purchasePrice)} `;
+    if (hasValue) priceInfo += `Wert: ${DataUtils.formatCurrency(item.currentValue)}`;
+    if (hasBoth) {
       const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
-      priceInfo += ` <span style="color: ${profitColor}; font-weight: 600;">${profit > 0 ? '+' : ''}${profit}€</span>`;
+      priceInfo += ` <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
     }
 
     div.className = 'card-tile card-tile--item';
+    
+    // Use first image or show image count
+    const hasImages = item.imageUrls && item.imageUrls.length > 0;
+    const firstImage = hasImages ? item.imageUrls![0] : undefined;
+    const imageCount = hasImages ? item.imageUrls!.length : 0;
+    
     div.innerHTML = `
-      ${this.createImageSection(item.imageUrl)}
-      <div class="card-tile__content">
+      ${this.createImageSection(firstImage)}
+      ${hasImages && imageCount > 1 ? `
+        <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">+${imageCount - 1}</div>
+      ` : ''}
+      <div class="card-tile__content" style="flex-grow: 1;">
         <div class="card-tile__title" style="color: ${Theme.colors.success};">${item.name}</div>
         ${priceInfo ? `<div class="card-tile__subtitle">${priceInfo}</div>` : ''}
       </div>
-      <div class="card-tile__actions" style="display: flex; gap: ${Theme.spacing.sm}; justify-content: space-between;">
+      <div class="card-tile__actions" style="display: flex; gap: ${Theme.spacing.sm}; justify-content: space-between; margin-top: auto;">
         <div class="card-tile__badge" onclick="event.stopPropagation();">📦 Artikel</div>
         <div style="display: flex; gap: ${Theme.spacing.sm};">
           <button class="btn-secondary btn-sm" data-action="edit">⚙️ Bearbeiten</button>

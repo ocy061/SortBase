@@ -21,7 +21,7 @@ export interface InventoryList {
 export interface InventoryItem {
   id: string;
   name: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   purchasePrice: number;
   currentValue: number;
   createdAt: string;
