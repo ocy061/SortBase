@@ -1,7 +1,8 @@
+import { LIMITS } from './constants';
 
 /**
  * Datenmodell für eine Inventar-Liste
- * Unterstützt Verschachtelung bis zu 9 Ebenen tief
+ * Unterstützt Verschachtelung bis zu ${LIMITS.MAX_NESTING_LEVEL} Ebenen tief
  */
 export interface InventoryList {
   id: string;
@@ -10,8 +11,8 @@ export interface InventoryList {
   imageUrl?: string;
   createdAt: string;
   items: InventoryItem[];
-  sublists?: InventoryList[]; // Unterlisten (max. 3 Ebenen)
-  level?: number; // Verschachtelungstiefe (0 = Hauptliste)
+  sublists?: InventoryList[]; // Unterlisten (max. ${LIMITS.MAX_NESTING_LEVEL} Ebenen Tiefe)
+  level?: number; // Verschachtelungstiefe (0 = Hauptliste, max. ${LIMITS.MAX_NESTING_LEVEL})
 }
 
 /**

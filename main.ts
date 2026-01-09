@@ -10,9 +10,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { InventoryList } from './src/models';
+import { STORAGE } from './src/constants';
 
 // Pfad zur JSON-Datei im User-Data-Verzeichnis
-const DATA_PATH = path.join(app.getPath('userData'), 'sortbase-data.json');
+const DATA_PATH = path.join(app.getPath('userData'), STORAGE.DATA_FILE);
 
 
 // === TYPE DEFINITIONS ===
@@ -67,7 +68,6 @@ function saveData(data: InventarData) {
 
 // === AUTO-UPDATE ===
 
-const UPDATE_FEED_URL = process.env.SORTBASE_UPDATE_URL;
 let autoUpdaterWired = false;
 
 function setupAutoUpdates(win: BrowserWindow) {
@@ -80,9 +80,8 @@ function setupAutoUpdates(win: BrowserWindow) {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  if (UPDATE_FEED_URL) {
-    autoUpdater.setFeedURL({ provider: 'generic', url: UPDATE_FEED_URL });
-  }
+  // electron-updater verwendet automatisch die "publish" Konfiguration aus package.json
+  // Keine manuelle setFeedURL nötig, wenn GitHub in package.json konfiguriert ist
 
   ipcMain.removeHandler('check-for-updates');
   ipcMain.handle('check-for-updates', async () => {

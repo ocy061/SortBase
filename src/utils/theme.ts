@@ -265,10 +265,13 @@ export class StyleInjector {
 
       .header__title {
         display: flex;
-        align-items: center;
-        gap: ${Theme.spacing.md};
+        flex-direction: column;
+        align-items: flex-start;
+        gap: ${Theme.spacing.xs};
         flex: 1;
         min-width: 200px;
+        min-height: 52px;
+        justify-content: center;
       }
 
       .header__actions {
@@ -406,11 +409,16 @@ export class StyleInjector {
       .card-tile__title {
         font-weight: ${Theme.fonts.weight.semibold};
         color: ${Theme.colors.text};
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
       }
 
       .card-tile__subtitle {
         font-size: ${Theme.fonts.size.xs};
         color: ${Theme.colors.textSecondary};
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
 
       .card-tile__actions {
@@ -449,6 +457,9 @@ export class StyleInjector {
         cursor: pointer;
         text-decoration: none;
         padding: 2px 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
       }
 
       .card-row__title:hover {
@@ -458,6 +469,8 @@ export class StyleInjector {
       .card-row__subtitle {
         font-size: ${Theme.fonts.size.xs};
         color: ${Theme.colors.textSecondary};
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
 
       .card-row__actions {
@@ -590,6 +603,9 @@ export class StyleInjector {
         border: 1px solid ${Theme.colors.border};
         border-radius: ${Theme.borderRadius.md};
         padding: 0.5rem 0.75rem;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       .form-group__hint {
@@ -627,9 +643,15 @@ export class StyleInjector {
         width: 90vw;
         max-height: 90vh;
         overflow-y: auto;
+        overflow-x: hidden;
+        word-wrap: break-word;
       }
 
       .modal__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
         margin-bottom: ${Theme.spacing.lg};
         padding-bottom: ${Theme.spacing.md};
         border-bottom: 1px solid ${Theme.colors.border};
@@ -640,6 +662,11 @@ export class StyleInjector {
         font-weight: ${Theme.fonts.weight.semibold};
         color: ${Theme.colors.text};
         margin: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        flex: 1;
+        padding-right: ${Theme.spacing.sm};
       }
 
       .modal__content {

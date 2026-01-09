@@ -5,9 +5,7 @@ import { DropdownManager } from './uiManager';
 import { StyleInjector, Theme } from './theme';
 import { ComponentBuilders } from './componentBuilders';
 import { ImageHandler } from './imageHandler';
-
-// Maximale Verschachtelungstiefe für Unterlisten
-const MAX_NESTING_LEVEL = 9;
+import { LIMITS, CHAR_LIMITS, UI_TEXT } from '../constants';
 
 /**
  * Renderer-Klasse: Verantwortlich für das Rendern aller UI-Views
@@ -209,18 +207,19 @@ export class Renderer {
       <div class="modal">
         <div class="modal__header">
           <h2 class="modal__title">Neue Liste erstellen</h2>
+          <button type="button" id="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: ${Theme.colors.textSecondary}; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: color 0.2s ease; flex-shrink: 0;">✕</button>
         </div>
         <form id="inline-form" class="modal__content form">
           ${ImageHandler.createImageInput()}
           <div class="form-group">
             <label class="form-group__label">Listenname</label>
-            <input id="list-name" type="text" placeholder="z.B. Meine Sammlung" required maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <input id="list-name" type="text" placeholder="z.B. Meine Sammlung" required maxlength="${CHAR_LIMITS.NAME}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
-            <label class="form-group__label">Kategorie (optional)</label>
-            <input id="list-category" type="text" placeholder="z.B. Elektronik" maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <label class="form-group__label">Kategorie</label>
+            <input id="list-category" type="text" placeholder="z.B. Elektronik" maxlength="${CHAR_LIMITS.CATEGORY}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.CATEGORY}</div>
           </div>
           <div class="modal__actions">
             <button type="button" id="form-cancel" class="btn-secondary">Abbrechen</button>
@@ -235,6 +234,7 @@ export class Renderer {
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
+    const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -261,6 +261,7 @@ export class Renderer {
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
+    closeBtn?.addEventListener('click', () => dialog.remove());
   }
 
   private showEditListDialog(list: InventoryList, onSaved?: () => Promise<void> | void) {
@@ -269,19 +270,20 @@ export class Renderer {
     dialog.innerHTML = `
       <div class="modal">
         <div class="modal__header">
-          <h2 class="modal__title">Liste bearbeiten: "${list.name}"</h2>
+          <h2 class="modal__title">Liste bearbeiten</h2>
+          <button type="button" id="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: ${Theme.colors.textSecondary}; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: color 0.2s ease; flex-shrink: 0;">✕</button>
         </div>
         <form id="inline-form" class="modal__content form">
           ${ImageHandler.createImageInput(list.imageUrl)}
           <div class="form-group">
             <label class="form-group__label">Listenname</label>
-            <input id="list-name" type="text" value="${list.name}" required maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <input id="list-name" type="text" value="${list.name}" required maxlength="${CHAR_LIMITS.NAME}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Kategorie</label>
-            <input id="list-category" type="text" value="${list.category || ''}" maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <input id="list-category" type="text" value="${list.category || ''}" maxlength="${CHAR_LIMITS.CATEGORY}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.CATEGORY}</div>
           <div class="modal__actions">
             <button type="button" id="form-cancel" class="btn-secondary">Abbrechen</button>
             <button type="submit" class="btn-primary">Speichern</button>
@@ -295,6 +297,7 @@ export class Renderer {
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
+    const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
     const removeImageBtn = dialog.querySelector('#remove-image-btn') as HTMLButtonElement;
 
     let currentImage = list.imageUrl;
@@ -323,6 +326,7 @@ export class Renderer {
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
+    closeBtn?.addEventListener('click', () => dialog.remove());
   }
 
   private async showDeleteListConfirm(list: InventoryList) {
@@ -372,11 +376,11 @@ export class Renderer {
 
     document.body.innerHTML = `
       <div id="app">
-        ${ComponentBuilders.createHeader(`📂 ${list.name}`, backButtons)}
+        ${ComponentBuilders.createHeader(`📂 ${list.name}`, backButtons, list.category)}
         <main class="main">
           <div style="margin-bottom: ${Theme.spacing.lg};">
             ${ComponentBuilders.createBreadcrumb(breadcrumb.map((item, idx) => ({
-              label: item.name + (item.category ? ` (${item.category})` : ''),
+              label: item.name,
               id: item.id,
             })))}
           </div>
@@ -392,12 +396,12 @@ export class Renderer {
             detailState.combinedSortMode,
             detailState.combinedSortAsc,
             detailState.listViewMode,
-            list.level! < MAX_NESTING_LEVEL,
+            list.level! < LIMITS.MAX_NESTING_LEVEL,
           )}
           <div id="content-container"></div>
         </main>
         ${ComponentBuilders.createFooter([
-          ...(list.level! < MAX_NESTING_LEVEL ? [{ label: '➕ Neue Unterliste', id: 'add-sublist-btn', variant: 'success' as const }] : []),
+          ...(list.level! < LIMITS.MAX_NESTING_LEVEL ? [{ label: '➕ Neue Unterliste', id: 'add-sublist-btn', variant: 'success' as const }] : []),
           { label: '➕ Neuer Artikel', id: 'add-item-btn', variant: 'success' as const },
         ])}
       </div>
@@ -588,7 +592,7 @@ export class Renderer {
 
     // === UNTERLISTEN-SEKTION ===
     // Zeige Unterlisten nur wenn: ViewMode erlaubt, Level-Limit nicht erreicht, und Unterlisten vorhanden
-    if ((viewMode === 'all' || viewMode === 'sublists') && currentLevel < MAX_NESTING_LEVEL && list.sublists?.length) {
+    if ((viewMode === 'all' || viewMode === 'sublists') && currentLevel < LIMITS.MAX_NESTING_LEVEL && list.sublists?.length) {
       const sublistsDiv = document.createElement('div');
       sublistsDiv.innerHTML = `<h3 style="margin-top: ${Theme.spacing.lg};">📁 Unterlisten</h3>`;
       const sublistsContainer = document.createElement('div');
@@ -675,18 +679,19 @@ export class Renderer {
       <div class="modal">
         <div class="modal__header">
           <h2 class="modal__title">Neue Unterliste erstellen</h2>
+          <button type="button" id="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: ${Theme.colors.textSecondary}; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: color 0.2s ease; flex-shrink: 0;">✕</button>
         </div>
         <form id="inline-form" class="modal__content form">
           ${ImageHandler.createImageInput()}
           <div class="form-group">
             <label class="form-group__label">Name</label>
-            <input id="sublist-name" type="text" required maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <input id="sublist-name" type="text" required maxlength="${CHAR_LIMITS.NAME}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
-            <label class="form-group__label">Kategorie (optional)</label>
-            <input id="sublist-category" type="text" maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <label class="form-group__label">Kategorie</label>
+            <input id="sublist-category" type="text" maxlength="${CHAR_LIMITS.CATEGORY}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.CATEGORY}</div>
           </div>
           <div class="modal__actions">
             <button type="button" id="form-cancel" class="btn-secondary">Abbrechen</button>
@@ -701,6 +706,7 @@ export class Renderer {
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
+    const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -727,6 +733,7 @@ export class Renderer {
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
+    closeBtn?.addEventListener('click', () => dialog.remove());
   }
 
   private showAddItemDialog(list: InventoryList, listId: string) {
@@ -736,23 +743,24 @@ export class Renderer {
       <div class="modal">
         <div class="modal__header">
           <h2 class="modal__title">Neuen Artikel hinzufügen</h2>
+          <button type="button" id="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: ${Theme.colors.textSecondary}; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: color 0.2s ease; flex-shrink: 0;">✕</button>
         </div>
         <form id="inline-form" class="modal__content form">
           ${ImageHandler.createMultiImageGallery()}
           <div class="form-group">
             <label class="form-group__label">Artikelname</label>
-            <input id="item-name" type="text" required maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <input id="item-name" type="text" required maxlength="${CHAR_LIMITS.NAME}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Kaufpreis in €</label>
             <input id="item-purchase" type="number" step="0.01" max="9999999999999.99" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Optional</div>
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Aktueller Wert in €</label>
             <input id="item-value" type="number" step="0.01" max="9999999999999.99" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Optional</div>
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Eigene Eigenschaften</label>
@@ -771,6 +779,7 @@ export class Renderer {
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
+    const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
     const addPropertyBtn = dialog.querySelector('#add-property-btn') as HTMLButtonElement;
     const propertiesContainer = dialog.querySelector('#properties-container') as HTMLDivElement;
 
@@ -786,16 +795,44 @@ export class Renderer {
       const row = document.createElement('div');
       row.style.cssText = `display: flex; gap: ${Theme.spacing.xs}; align-items: center;`;
       row.innerHTML = `
-        <input type="text" placeholder="Eigenschaft" value="${key}" class="prop-key" style="flex: 1; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="30" />
-        <input type="text" placeholder="Wert" value="${value}" class="prop-value" style="flex: 2; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="100" />
+        <input type="text" placeholder="Eigenschaft" value="${key}" class="prop-key" style="flex: 1; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="${CHAR_LIMITS.PROPERTY_KEY}" />
+        <input type="text" placeholder="Wert" value="${value}" class="prop-value" style="flex: 2; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="${CHAR_LIMITS.PROPERTY_VALUE}" />
         <button type="button" class="btn-danger btn-sm remove-prop-btn">🗑️</button>
       `;
       propertiesContainer.appendChild(row);
-      row.querySelector('.remove-prop-btn')?.addEventListener('click', () => row.remove());
+      row.querySelector('.remove-prop-btn')?.addEventListener('click', () => {
+        row.remove();
+        updateAddPropertyButtonState();
+      });
       propertyIndex++;
     };
 
-    addPropertyBtn?.addEventListener('click', () => addPropertyRow());
+    const updateAddPropertyButtonState = () => {
+      const propertyCount = propertiesContainer.querySelectorAll('div').length;
+      if (addPropertyBtn) {
+        if (propertyCount >= LIMITS.MAX_PROPERTIES_PER_ITEM) {
+          addPropertyBtn.disabled = true;
+          addPropertyBtn.style.opacity = '0.5';
+          addPropertyBtn.style.cursor = 'not-allowed';
+          addPropertyBtn.title = UI_TEXT.ALERTS.MAX_PROPERTIES;
+        } else {
+          addPropertyBtn.disabled = false;
+          addPropertyBtn.style.opacity = '1';
+          addPropertyBtn.style.cursor = 'pointer';
+          addPropertyBtn.title = '';
+        }
+      }
+    };
+
+    addPropertyBtn?.addEventListener('click', () => {
+      const propertyCount = propertiesContainer.querySelectorAll('div').length;
+      if (propertyCount >= LIMITS.MAX_PROPERTIES_PER_ITEM) {
+        alert(UI_TEXT.ALERTS.MAX_PROPERTIES);
+        return;
+      }
+      addPropertyRow();
+      updateAddPropertyButtonState();
+    });
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -830,6 +867,7 @@ export class Renderer {
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
+    closeBtn?.addEventListener('click', () => dialog.remove());
   }
 
   private showEditItemDialog(list: InventoryList, item: InventoryItem, listId: string, afterSave?: () => void) {
@@ -838,24 +876,25 @@ export class Renderer {
     dialog.innerHTML = `
       <div class="modal">
         <div class="modal__header">
-          <h2 class="modal__title">Artikel bearbeiten: "${item.name}"</h2>
+          <h2 class="modal__title">Artikel bearbeiten</h2>
+          <button type="button" id="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: ${Theme.colors.textSecondary}; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: color 0.2s ease; flex-shrink: 0;">✕</button>
         </div>
         <form id="inline-form" class="modal__content form">
           ${ImageHandler.createMultiImageGallery(item.imageUrls || [])}
           <div class="form-group">
             <label class="form-group__label">Artikelname</label>
-            <input id="item-name" type="text" value="${item.name}" required maxlength="50" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Max. 50 Zeichen</div>
+            <input id="item-name" type="text" value="${item.name}" required maxlength="${CHAR_LIMITS.NAME}" class="form-group__input" />
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Kaufpreis in €</label>
             <input id="item-purchase" type="number" step="0.01" max="9999999999999.99" value="${(typeof item.purchasePrice === 'number' && !isNaN(item.purchasePrice)) ? item.purchasePrice : ''}" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Optional</div>
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Aktueller Wert in €</label>
             <input id="item-value" type="number" step="0.01" max="9999999999999.99" value="${(typeof item.currentValue === 'number' && !isNaN(item.currentValue)) ? item.currentValue : ''}" class="form-group__input" />
-            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">Optional</div>
+            <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Eigene Eigenschaften</label>
@@ -874,6 +913,7 @@ export class Renderer {
 
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
+    const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
     const addPropertyBtn = dialog.querySelector('#add-property-btn') as HTMLButtonElement;
     const propertiesContainer = dialog.querySelector('#properties-container') as HTMLDivElement;
 
@@ -889,13 +929,33 @@ export class Renderer {
       const row = document.createElement('div');
       row.style.cssText = `display: flex; gap: ${Theme.spacing.xs}; align-items: center;`;
       row.innerHTML = `
-        <input type="text" placeholder="Eigenschaft" value="${key}" class="prop-key" style="flex: 1; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="30" />
-        <input type="text" placeholder="Wert" value="${value}" class="prop-value" style="flex: 2; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="100" />
+        <input type="text" placeholder="Eigenschaft" value="${key}" class="prop-key" style="flex: 1; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="${CHAR_LIMITS.PROPERTY_KEY}" />
+        <input type="text" placeholder="Wert" value="${value}" class="prop-value" style="flex: 2; padding: 8px; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.sm};" maxlength="${CHAR_LIMITS.PROPERTY_VALUE}" />
         <button type="button" class="btn-danger btn-sm remove-prop-btn">🗑️</button>
       `;
       propertiesContainer.appendChild(row);
-      row.querySelector('.remove-prop-btn')?.addEventListener('click', () => row.remove());
+      row.querySelector('.remove-prop-btn')?.addEventListener('click', () => {
+        row.remove();
+        updateAddPropertyButtonState();
+      });
       propertyIndex++;
+    };
+
+    const updateAddPropertyButtonState = () => {
+      const propertyCount = propertiesContainer.querySelectorAll('div').length;
+      if (addPropertyBtn) {
+        if (propertyCount >= LIMITS.MAX_PROPERTIES_PER_ITEM) {
+          addPropertyBtn.disabled = true;
+          addPropertyBtn.style.opacity = '0.5';
+          addPropertyBtn.style.cursor = 'not-allowed';
+          addPropertyBtn.title = UI_TEXT.ALERTS.MAX_PROPERTIES;
+        } else {
+          addPropertyBtn.disabled = false;
+          addPropertyBtn.style.opacity = '1';
+          addPropertyBtn.style.cursor = 'pointer';
+          addPropertyBtn.title = '';
+        }
+      }
     };
 
     // Load existing properties
@@ -905,7 +965,17 @@ export class Renderer {
       });
     }
 
-    addPropertyBtn?.addEventListener('click', () => addPropertyRow());
+    updateAddPropertyButtonState();
+
+    addPropertyBtn?.addEventListener('click', () => {
+      const propertyCount = propertiesContainer.querySelectorAll('div').length;
+      if (propertyCount >= LIMITS.MAX_PROPERTIES_PER_ITEM) {
+        alert(UI_TEXT.ALERTS.MAX_PROPERTIES);
+        return;
+      }
+      addPropertyRow();
+      updateAddPropertyButtonState();
+    });
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -936,6 +1006,7 @@ export class Renderer {
     });
 
     cancelBtn?.addEventListener('click', () => dialog.remove());
+    closeBtn?.addEventListener('click', () => dialog.remove());
   }
 
   private async showDeleteSublistConfirm(parentList: InventoryList, sublist: InventoryList) {
@@ -1028,7 +1099,7 @@ export class Renderer {
           <div style="margin-bottom: ${Theme.spacing.lg};">
             ${ComponentBuilders.createBreadcrumb(
               breadcrumb.map((i, idx) => ({
-                label: i.name + (i.category ? ` (${i.category})` : ''),
+                label: i.name,
                 id: i.id,
               }))
             )}

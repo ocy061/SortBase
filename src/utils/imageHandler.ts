@@ -1,3 +1,5 @@
+import { LIMITS, UI_TEXT, IMAGE_SIZES } from '../constants';
+
 /**
  * ImageHandler: Zentrale Bildverarbeitung
  * - Konvertierung zu Base64 für JSON-Speicherung
@@ -34,17 +36,17 @@ export class ImageHandler {
           🖼️ Bild auswählen
         </label>
         <div id="image-status" style="font-size: 0.8rem; color: #6b7280; margin-top: 6px;">
-          ${currentImageUrl ? 'Bild vorhanden' : 'Optional'}
+          ${currentImageUrl ? UI_TEXT.IMAGE_HINTS.IMAGE_PRESENT : UI_TEXT.IMAGE_HINTS.OPTIONAL}
         </div>
         ${currentImageUrl ? `
           <div id="image-preview" style="margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative;">
             <img id="preview-img" src="${currentImageUrl}" style="width: 100%; height: 100%; object-fit: contain;" />
-            <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; font-size: 16px; border-radius: 6px;">🗑️</button>
+            <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; font-size: 16px; border-radius: 6px; display: none; background: rgba(239, 68, 68, 0.9); color: white; border: none; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); transition: all 0.2s ease; line-height: 1;">🗑️</button>
           </div>
         ` : `
           <div id="image-preview" style="display: none; margin-top: 12px; border-radius: 6px; overflow: hidden; max-width: 150px; max-height: 150px; display: flex; align-items: center; justify-content: center; background: #f8fafc; position: relative;">
             <img id="preview-img" style="width: 100%; height: 100%; object-fit: contain;" />
-            <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; font-size: 16px; border-radius: 6px; display: none;">🗑️</button>
+            <button type="button" id="remove-image-btn" class="btn-danger btn-sm" style="position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; padding: 0; font-size: 16px; border-radius: 6px; display: none; background: rgba(239, 68, 68, 0.9); color: white; border: none; cursor: pointer; font-weight: bold; z-index: 10; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); transition: all 0.2s ease; line-height: 1;">🗑️</button>
           </div>
         `}
       </div>
@@ -78,6 +80,33 @@ export class ImageHandler {
 
     if (!input) return;
 
+    // Set initial state: hide delete button by default
+    if (removeBtn && preview?.style.display === 'flex') {
+      removeBtn.style.display = 'none';
+    }
+
+    // Add hover listeners to preview container
+    if (preview) {
+      preview.addEventListener('mouseenter', () => {
+        if (removeBtn) removeBtn.style.display = 'block';
+      });
+      preview.addEventListener('mouseleave', () => {
+        if (removeBtn) removeBtn.style.display = 'none';
+      });
+    }
+
+    // Add hover effect to delete button
+    if (removeBtn) {
+      removeBtn.addEventListener('mouseenter', () => {
+        removeBtn.style.backgroundColor = '#b91c1c';
+        removeBtn.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.4)';
+      });
+      removeBtn.addEventListener('mouseleave', () => {
+        removeBtn.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
+        removeBtn.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.25)';
+      });
+    }
+
     input.addEventListener('change', async () => {
       if (input.files?.length) {
         const base64 = await this.fileToBase64(input.files[0]);
@@ -94,8 +123,7 @@ export class ImageHandler {
             preview.appendChild(img);
           }
         }
-        if (removeBtn) removeBtn.style.display = 'block';
-        if (imageStatus) imageStatus.textContent = 'Bild vorhanden';
+        if (imageStatus) imageStatus.textContent = UI_TEXT.IMAGE_HINTS.IMAGE_PRESENT;
       }
     });
 
@@ -108,7 +136,7 @@ export class ImageHandler {
         if (previewImg) previewImg.src = '';
         // Hide remove button again
         removeBtn.style.display = 'none';
-        if (imageStatus) imageStatus.textContent = 'Optional';
+        if (imageStatus) imageStatus.textContent = UI_TEXT.IMAGE_HINTS.OPTIONAL;
         // Emit a custom event so callers can react (e.g., clear currentImage)
         const ev = new CustomEvent('image-cleared');
         removeBtn.dispatchEvent(ev);
@@ -145,7 +173,7 @@ export class ImageHandler {
           🖼️ Bilder auswählen
         </label>
         <div id="image-count-display" style="font-size: 0.8rem; color: #6b7280; margin-top: 6px;">
-          ${currentImageUrls.length > 0 ? `${currentImageUrls.length} Bild${currentImageUrls.length > 1 ? 'er' : ''} hinzugefügt` : 'Optional - mehrere Bilder möglich. Klick auf ein Bild zum Löschen.'}
+          ${currentImageUrls.length > 0 ? UI_TEXT.IMAGE_HINTS.IMAGES_COUNT(currentImageUrls.length) : UI_TEXT.IMAGE_HINTS.MULTI_OPTIONAL}
         </div>
         <div id="image-gallery" style="display: flex; gap: 16px; margin-top: 12px; overflow-x: auto; padding-bottom: 8px;">
           ${currentImageUrls.map((url, idx) => `
@@ -203,8 +231,8 @@ export class ImageHandler {
       // Update image count display
       if (imageCountDisplay) {
         imageCountDisplay.textContent = imageList.length > 0 
-          ? `${imageList.length} Bild${imageList.length > 1 ? 'er' : ''} hinzugefügt`
-          : 'Optional - mehrere Bilder möglich. Klick auf ein Bild zum Löschen.';
+          ? UI_TEXT.IMAGE_HINTS.IMAGES_COUNT(imageList.length)
+          : UI_TEXT.IMAGE_HINTS.MULTI_OPTIONAL;
       }
 
       // Attach hover and click handlers to all items
@@ -246,7 +274,16 @@ export class ImageHandler {
       input.addEventListener('change', async () => {
         const newImages = await this.loadMultipleImagesFromInput();
         if (newImages.length > 0) {
-          imageList = [...imageList, ...newImages];
+          // Limit to max images per item
+          const remainingSlots = LIMITS.MAX_IMAGES_PER_ITEM - imageList.length;
+          const imagesToAdd = newImages.slice(0, remainingSlots);
+          imageList = [...imageList, ...imagesToAdd];
+          
+          // Show warning if user tried to add more than available slots
+          if (newImages.length > remainingSlots) {
+            alert(UI_TEXT.ALERTS.MAX_IMAGES(remainingSlots));
+          }
+          
           updateGallery();
         }
         input.value = ''; // Reset file input

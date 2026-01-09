@@ -31,7 +31,7 @@ export class ComponentBuilders {
   }
 
   /** Erstellt Header mit Titel und Action-Buttons */
-  static createHeader(title: string, actions: { label: string; id: string; className?: string }[] = []): string {
+  static createHeader(title: string, actions: { label: string; id: string; className?: string }[] = [], subtitle?: string): string {
     const actionButtons = actions.map(action => {
       const classes = action.className || 'btn-secondary btn-sm';
       return `<button id="${action.id}" class="${classes}">${action.label}</button>`;
@@ -42,6 +42,7 @@ export class ComponentBuilders {
         <div class="header__content">
           <div class="header__title">
             <h1 style="margin: 0; font-size: ${Theme.fonts.size.xl};">${title}</h1>
+            ${subtitle ? `<div style="font-size: ${Theme.fonts.size.sm}; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${subtitle}</div>` : ''}
           </div>
           <div class="header__actions">
             ${actionButtons}
@@ -186,13 +187,13 @@ export class ComponentBuilders {
     const hasProfit = totals.profit !== undefined;
 
     let totalsInfo = '';
-    if (hasPurchase) totalsInfo += `Gekauft: ${DataUtils.formatCurrency(totals.purchasePrice!)} `;
+    if (hasPurchase) totalsInfo += `Bezahlt: ${DataUtils.formatCurrency(totals.purchasePrice!)}, `;
     if (hasValue) totalsInfo += `Wert: ${DataUtils.formatCurrency(totals.currentValue!)}`;
     if (hasProfit) {
       const profit = totals.profit!;
       const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
       const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
-      totalsInfo += ` <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+      totalsInfo += `, <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
     }
 
     div.innerHTML = `
@@ -250,11 +251,11 @@ export class ComponentBuilders {
     const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
     let priceInfo = '';
 
-    if (hasPurchase) priceInfo += `Gekauft: ${DataUtils.formatCurrency(item.purchasePrice)} `;
+    if (hasPurchase) priceInfo += `Bezahlt: ${DataUtils.formatCurrency(item.purchasePrice)}, `;
     if (hasValue) priceInfo += `Wert: ${DataUtils.formatCurrency(item.currentValue)}`;
     if (hasBoth) {
       const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
-      priceInfo += ` <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+      priceInfo += `, <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
     }
 
     div.className = 'card-tile card-tile--item';
