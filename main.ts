@@ -9,8 +9,10 @@ import log from 'electron-log';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { InventoryList } from './src/models';
-import { STORAGE } from './src/constants';
+import type { InventoryList } from './src/models';
+
+type StorageType = typeof import('./src/constants').STORAGE;
+const { STORAGE } = require('./dist/constants') as { STORAGE: StorageType };
 
 // Pfad zur JSON-Datei im User-Data-Verzeichnis
 const DATA_PATH = path.join(app.getPath('userData'), STORAGE.DATA_FILE);
