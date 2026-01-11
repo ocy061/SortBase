@@ -26,6 +26,7 @@ declare global {
     };
     updateAPI?: {
       checkForUpdates: () => Promise<any>;
+      quitAndInstall: () => Promise<any>;
       onUpdateAvailable: (callback: (info: any) => void) => void;
       onUpdateNotAvailable: (callback: (info: any) => void) => void;
       onDownloadProgress: (callback: (percent: number) => void) => void;
@@ -48,6 +49,7 @@ async function init() {
   if (window.updateAPI) {
     window.updateAPI.onUpdateAvailable((info) => {
       console.info('Update verfügbar:', info?.version ?? 'unbekannt');
+      alert(`Ein neues Update (${info?.version ?? 'neue Version'}) ist verfügbar und wird heruntergeladen...`);
     });
     window.updateAPI.onUpdateNotAvailable(() => {
       console.info('Keine Updates verfügbar.');
@@ -56,7 +58,8 @@ async function init() {
       console.info(`Update-Download: ${percent.toFixed(1)}%`);
     });
     window.updateAPI.onUpdateDownloaded(() => {
-      alert('Update geladen. Bitte die App neu starten, um es zu installieren.');
+      alert('Update bereit. Die App wird neu gestartet, um es zu installieren.');
+      window.updateAPI?.quitAndInstall().catch((err) => console.error('quitAndInstall fehlgeschlagen', err));
     });
     window.updateAPI.onUpdateError((message) => {
       console.error('Update-Fehler:', message);

@@ -95,6 +95,12 @@ function setupAutoUpdates(win: BrowserWindow) {
     }
   });
 
+  ipcMain.removeHandler('quit-and-install');
+  ipcMain.handle('quit-and-install', async () => {
+    autoUpdater.quitAndInstall();
+    return { status: 'installing' };
+  });
+
   if (!autoUpdaterWired) {
     autoUpdater.on('update-available', (info) => {
       if (!win.isDestroyed()) win.webContents.send('update-available', info);

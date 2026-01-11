@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('inventarAPI', {
 
 contextBridge.exposeInMainWorld('updateAPI', {
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
   onUpdateAvailable: (callback: (info: any) => void) => ipcRenderer.on('update-available', (_event, info) => callback(info)),
   onUpdateNotAvailable: (callback: (info: any) => void) => ipcRenderer.on('update-not-available', (_event, info) => callback(info)),
   onDownloadProgress: (callback: (percent: number) => void) => ipcRenderer.on('update-download-progress', (_event, percent) => callback(percent)),
