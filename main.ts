@@ -10,9 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import type { InventoryList } from './src/models';
-
-type StorageType = typeof import('./src/constants').STORAGE;
-const { STORAGE } = require('./dist/constants') as { STORAGE: StorageType };
+import { STORAGE } from './src/constants';
 
 // Pfad zur JSON-Datei im User-Data-Verzeichnis
 const DATA_PATH = path.join(app.getPath('userData'), STORAGE.DATA_FILE);
