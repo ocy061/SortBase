@@ -13,6 +13,7 @@ export interface InventoryList {
   items: InventoryItem[];
   sublists?: InventoryList[]; // Unterlisten (max. ${LIMITS.MAX_NESTING_LEVEL} Ebenen Tiefe)
   level?: number; // Verschachtelungstiefe (0 = Hauptliste, max. ${LIMITS.MAX_NESTING_LEVEL})
+  hideFinancials?: boolean; // Finanzielle Werte verbergen (Privatsphäre)
 }
 
 /**
@@ -27,4 +28,5 @@ export interface InventoryItem {
   currentValue: number;
   createdAt: string;
   properties?: Record<string, string | number>;
+  hideFinancials?: boolean; // Finanzielle Werte verbergen (Privatsphäre)
 }

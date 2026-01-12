@@ -7,6 +7,9 @@ import { ComponentBuilders } from './componentBuilders';
 import { ImageHandler } from './imageHandler';
 import { LIMITS, CHAR_LIMITS, UI_TEXT } from '../constants';
 
+// Global tracker to ensure only one info tooltip is open at a time
+let currentOpenTooltip: HTMLElement | null = null;
+
 /**
  * Renderer-Klasse: Verantwortlich für das Rendern aller UI-Views
  * - Listen-Übersicht
@@ -221,6 +224,17 @@ export class Renderer {
             <input id="list-category" type="text" placeholder="z.B. Elektronik" maxlength="${CHAR_LIMITS.CATEGORY}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.CATEGORY}</div>
           </div>
+          <div class="form-group">
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Finanz-Werte
+              <span id="info-financials" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Eingetragene Artikel mit Kaufpreis, aktuellem Wert bzw. Profit/Verlust werden automatisch summiert und in der Listen-Übersicht angezeigt. Diese Anzeige kann hier an/aus gestellt werden.</div>
+            </label>
+            <div style="display: flex; align-items: center; gap: ${Theme.spacing.sm}; margin-top: ${Theme.spacing.xs};">
+              <input id="list-hide-financials" type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 0.95rem; color: ${Theme.colors.text};">Anzeige aktivieren</span>
+            </div>
+          </div>
           <div class="modal__actions">
             <button type="button" id="form-cancel" class="btn-secondary">Abbrechen</button>
             <button type="submit" class="btn-primary">Speichern</button>
@@ -235,6 +249,34 @@ export class Renderer {
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
     const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
+    
+    // Setup info tooltip
+    const infoIcon = dialog.querySelector('#info-financials') as HTMLElement;
+    const tooltip = dialog.querySelector('#info-tooltip') as HTMLElement;
+    if (infoIcon && tooltip) {
+      infoIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentOpenTooltip && currentOpenTooltip !== tooltip) {
+          currentOpenTooltip.style.display = 'none';
+        }
+        const willOpen = tooltip.style.display === 'none';
+        tooltip.style.display = willOpen ? 'block' : 'none';
+        currentOpenTooltip = willOpen ? tooltip : null;
+      });
+      const closeTooltip = (e: MouseEvent) => {
+        if (tooltip.style.display !== 'none' && !tooltip.contains(e.target as Node) && !infoIcon.contains(e.target as Node)) {
+          tooltip.style.display = 'none';
+          if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+        }
+      };
+      document.addEventListener('click', closeTooltip);
+      const cleanup = () => {
+        document.removeEventListener('click', closeTooltip);
+        if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+      };
+      cancelBtn.addEventListener('click', cleanup);
+      closeBtn.addEventListener('click', cleanup);
+    }
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -284,6 +326,18 @@ export class Renderer {
             <label class="form-group__label">Kategorie</label>
             <input id="list-category" type="text" value="${list.category || ''}" maxlength="${CHAR_LIMITS.CATEGORY}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.CATEGORY}</div>
+          </div>
+          <div class="form-group">
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Finanz-Werte
+              <span id="info-financials" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Eingetragene Artikel mit Kaufpreis, aktuellem Wert bzw. Profit/Verlust werden automatisch summiert und in der Listen-Übersicht angezeigt. Diese Anzeige kann hier an/aus gestellt werden.</div>
+            </label>
+            <div style="display: flex; align-items: center; gap: ${Theme.spacing.sm}; margin-top: ${Theme.spacing.xs};">
+              <input id="list-hide-financials" type="checkbox" ${list.hideFinancials ? '' : 'checked'} style="width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 0.95rem; color: ${Theme.colors.text};">Anzeige aktivieren</span>
+            </div>
+          </div>
           <div class="modal__actions">
             <button type="button" id="form-cancel" class="btn-secondary">Abbrechen</button>
             <button type="submit" class="btn-primary">Speichern</button>
@@ -301,6 +355,34 @@ export class Renderer {
     const removeImageBtn = dialog.querySelector('#remove-image-btn') as HTMLButtonElement;
 
     let currentImage = list.imageUrl;
+    
+    // Setup info tooltip
+    const infoIcon = dialog.querySelector('#info-financials') as HTMLElement;
+    const tooltip = dialog.querySelector('#info-tooltip') as HTMLElement;
+    if (infoIcon && tooltip) {
+      infoIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentOpenTooltip && currentOpenTooltip !== tooltip) {
+          currentOpenTooltip.style.display = 'none';
+        }
+        const willOpen = tooltip.style.display === 'none';
+        tooltip.style.display = willOpen ? 'block' : 'none';
+        currentOpenTooltip = willOpen ? tooltip : null;
+      });
+      const closeTooltip = (e: MouseEvent) => {
+        if (tooltip.style.display !== 'none' && !tooltip.contains(e.target as Node) && !infoIcon.contains(e.target as Node)) {
+          tooltip.style.display = 'none';
+          if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+        }
+      };
+      document.addEventListener('click', closeTooltip);
+      const cleanup = () => {
+        document.removeEventListener('click', closeTooltip);
+        if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+      };
+      cancelBtn.addEventListener('click', cleanup);
+      closeBtn.addEventListener('click', cleanup);
+    }
 
     removeImageBtn?.addEventListener('click', () => {
       currentImage = undefined;
@@ -312,6 +394,7 @@ export class Renderer {
       e.preventDefault();
       list.name = (dialog.querySelector('#list-name') as HTMLInputElement).value.trim();
       list.category = (dialog.querySelector('#list-category') as HTMLInputElement).value.trim() || undefined;
+      list.hideFinancials = !(dialog.querySelector('#list-hide-financials') as HTMLInputElement).checked;
       
       const newImage = await ImageHandler.loadImageFromInput('image-input');
       list.imageUrl = newImage || currentImage || undefined;
@@ -693,6 +776,17 @@ export class Renderer {
             <input id="sublist-category" type="text" maxlength="${CHAR_LIMITS.CATEGORY}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.CATEGORY}</div>
           </div>
+          <div class="form-group">
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Finanz-Werte
+              <span id="info-financials" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Eingetragene Artikel mit Kaufpreis, aktuellem Wert bzw. Profit/Verlust werden automatisch summiert und in der Listen-Übersicht angezeigt. Diese Anzeige kann hier an/aus gestellt werden.</div>
+            </label>
+            <div style="display: flex; align-items: center; gap: ${Theme.spacing.sm}; margin-top: ${Theme.spacing.xs};">
+              <input id="sublist-hide-financials" type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 0.95rem; color: ${Theme.colors.text};">Anzeige aktivieren</span>
+            </div>
+          </div>
           <div class="modal__actions">
             <button type="button" id="form-cancel" class="btn-secondary">Abbrechen</button>
             <button type="submit" class="btn-primary">Speichern</button>
@@ -707,11 +801,40 @@ export class Renderer {
     const form = dialog.querySelector('#inline-form') as HTMLFormElement;
     const cancelBtn = dialog.querySelector('#form-cancel') as HTMLButtonElement;
     const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
+    
+    // Setup info tooltip
+    const infoIcon = dialog.querySelector('#info-financials') as HTMLElement;
+    const tooltip = dialog.querySelector('#info-tooltip') as HTMLElement;
+    if (infoIcon && tooltip) {
+      infoIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentOpenTooltip && currentOpenTooltip !== tooltip) {
+          currentOpenTooltip.style.display = 'none';
+        }
+        const willOpen = tooltip.style.display === 'none';
+        tooltip.style.display = willOpen ? 'block' : 'none';
+        currentOpenTooltip = willOpen ? tooltip : null;
+      });
+      const closeTooltip = (e: MouseEvent) => {
+        if (tooltip.style.display !== 'none' && !tooltip.contains(e.target as Node) && !infoIcon.contains(e.target as Node)) {
+          tooltip.style.display = 'none';
+          if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+        }
+      };
+      document.addEventListener('click', closeTooltip);
+      const cleanup = () => {
+        document.removeEventListener('click', closeTooltip);
+        if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+      };
+      cancelBtn.addEventListener('click', cleanup);
+      closeBtn.addEventListener('click', cleanup);
+    }
 
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (dialog.querySelector('#sublist-name') as HTMLInputElement).value.trim();
       const category = (dialog.querySelector('#sublist-category') as HTMLInputElement).value.trim();
+      const hideFinancials = (dialog.querySelector('#sublist-hide-financials') as HTMLInputElement).checked;
       const imageUrl = await ImageHandler.loadImageFromInput('image-input');
 
       const newSublist: InventoryList = {
@@ -723,6 +846,7 @@ export class Renderer {
         items: [],
         sublists: [],
         level: (list.level ?? 0) + 1,
+        hideFinancials: hideFinancials ? true : undefined,
       };
 
       if (!list.sublists) list.sublists = [];
@@ -753,14 +877,33 @@ export class Renderer {
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
-            <label class="form-group__label">Kaufpreis in €</label>
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Kaufpreis in €
+              <span id="info-purchase" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-purchase-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Falls Kaufpreis und aktueller Wert angegeben werden, wird automatisch Profit/Verlust berechnet und angezeigt.</div>
+            </label>
             <input id="item-purchase" type="number" step="0.01" max="9999999999999.99" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
           </div>
           <div class="form-group">
-            <label class="form-group__label">Aktueller Wert in €</label>
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Aktueller Wert in €
+              <span id="info-value" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-value-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Falls Kaufpreis und aktueller Wert angegeben werden, wird automatisch Profit/Verlust berechnet und angezeigt.</div>
+            </label>
             <input id="item-value" type="number" step="0.01" max="9999999999999.99" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
+          </div>
+          <div class="form-group">
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Finanz-Werte
+              <span id="info-financials" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Kaufpreis, aktueller Wert bzw. Profit/Verlust werden in der Listen-Übersicht angezeigt. Diese Anzeige kann hier an/aus gestellt werden.</div>
+            </label>
+            <div style="display: flex; align-items: center; gap: ${Theme.spacing.sm}; margin-top: ${Theme.spacing.xs};">
+              <input id="item-hide-financials" type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 0.95rem; color: ${Theme.colors.text};">Anzeige aktivieren</span>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Eigene Eigenschaften</label>
@@ -782,6 +925,40 @@ export class Renderer {
     const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
     const addPropertyBtn = dialog.querySelector('#add-property-btn') as HTMLButtonElement;
     const propertiesContainer = dialog.querySelector('#properties-container') as HTMLDivElement;
+    
+    // Setup info tooltips
+    const setupInfoTooltip = (iconId: string, tooltipId: string) => {
+      const icon = dialog.querySelector(`#${iconId}`) as HTMLElement;
+      const tooltip = dialog.querySelector(`#${tooltipId}`) as HTMLElement;
+      if (icon && tooltip) {
+        icon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (currentOpenTooltip && currentOpenTooltip !== tooltip) {
+            currentOpenTooltip.style.display = 'none';
+          }
+          const willOpen = tooltip.style.display === 'none';
+          tooltip.style.display = willOpen ? 'block' : 'none';
+          currentOpenTooltip = willOpen ? tooltip : null;
+        });
+        const closeTooltip = (e: MouseEvent) => {
+          if (tooltip.style.display !== 'none' && !tooltip.contains(e.target as Node) && !icon.contains(e.target as Node)) {
+            tooltip.style.display = 'none';
+            if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+          }
+        };
+        document.addEventListener('click', closeTooltip);
+        const cleanup = () => {
+          document.removeEventListener('click', closeTooltip);
+          if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+        };
+        cancelBtn.addEventListener('click', cleanup);
+        closeBtn.addEventListener('click', cleanup);
+      }
+    };
+    
+    setupInfoTooltip('info-purchase', 'info-purchase-tooltip');
+    setupInfoTooltip('info-value', 'info-value-tooltip');
+    setupInfoTooltip('info-financials', 'info-tooltip');
 
     // Setup multi-image gallery with callback to track changes
     let imageUrls: string[] = [];
@@ -887,14 +1064,33 @@ export class Renderer {
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.NAME}</div>
           </div>
           <div class="form-group">
-            <label class="form-group__label">Kaufpreis in €</label>
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Kaufpreis in €
+              <span id="info-purchase" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-purchase-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Falls Kaufpreis und aktueller Wert angegeben werden, wird automatisch Profit/Verlust berechnet und angezeigt.</div>
+            </label>
             <input id="item-purchase" type="number" step="0.01" max="9999999999999.99" value="${(typeof item.purchasePrice === 'number' && !isNaN(item.purchasePrice)) ? item.purchasePrice : ''}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
           </div>
           <div class="form-group">
-            <label class="form-group__label">Aktueller Wert in €</label>
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Aktueller Wert in €
+              <span id="info-value" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-value-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Falls Kaufpreis und aktueller Wert angegeben werden, wird automatisch Profit/Verlust berechnet und angezeigt.</div>
+            </label>
             <input id="item-value" type="number" step="0.01" max="9999999999999.99" value="${(typeof item.currentValue === 'number' && !isNaN(item.currentValue)) ? item.currentValue : ''}" class="form-group__input" />
             <div style="font-size: 0.8rem; color: ${Theme.colors.textSecondary}; margin-top: ${Theme.spacing.xs};">${UI_TEXT.FIELD_HINTS.OPTIONAL}</div>
+          </div>
+          <div class="form-group">
+            <label class="form-group__label" style="display: inline-flex; align-items: center; gap: ${Theme.spacing.xs}; position: relative;">
+              Finanz-Werte
+              <span id="info-financials" style="display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #999; color: #999; font-size: 11px; font-weight: bold; cursor: pointer; user-select: none;">i</span>
+              <div id="info-tooltip" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; background: ${Theme.colors.surface}; border: 1px solid ${Theme.colors.border}; border-radius: ${Theme.borderRadius.md}; padding: ${Theme.spacing.sm}; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 280px; z-index: 10000; font-size: 0.85rem; font-weight: normal; color: ${Theme.colors.text};">Kaufpreis, aktueller Wert bzw. Profit/Verlust werden in der Listen-Übersicht angezeigt. Diese Anzeige kann hier an/aus gestellt werden.</div>
+            </label>
+            <div style="display: flex; align-items: center; gap: ${Theme.spacing.sm}; margin-top: ${Theme.spacing.xs};">
+              <input id="item-hide-financials" type="checkbox" ${item.hideFinancials ? '' : 'checked'} style="width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 0.95rem; color: ${Theme.colors.text};">Anzeige aktivieren</span>
+            </div>
           </div>
           <div class="form-group">
             <label class="form-group__label">Eigene Eigenschaften</label>
@@ -916,6 +1112,40 @@ export class Renderer {
     const closeBtn = dialog.querySelector('#modal-close') as HTMLButtonElement;
     const addPropertyBtn = dialog.querySelector('#add-property-btn') as HTMLButtonElement;
     const propertiesContainer = dialog.querySelector('#properties-container') as HTMLDivElement;
+    
+    // Setup info tooltips
+    const setupInfoTooltip = (iconId: string, tooltipId: string) => {
+      const icon = dialog.querySelector(`#${iconId}`) as HTMLElement;
+      const tooltip = dialog.querySelector(`#${tooltipId}`) as HTMLElement;
+      if (icon && tooltip) {
+        icon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (currentOpenTooltip && currentOpenTooltip !== tooltip) {
+            currentOpenTooltip.style.display = 'none';
+          }
+          const willOpen = tooltip.style.display === 'none';
+          tooltip.style.display = willOpen ? 'block' : 'none';
+          currentOpenTooltip = willOpen ? tooltip : null;
+        });
+        const closeTooltip = (e: MouseEvent) => {
+          if (tooltip.style.display !== 'none' && !tooltip.contains(e.target as Node) && !icon.contains(e.target as Node)) {
+            tooltip.style.display = 'none';
+            if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+          }
+        };
+        document.addEventListener('click', closeTooltip);
+        const cleanup = () => {
+          document.removeEventListener('click', closeTooltip);
+          if (currentOpenTooltip === tooltip) currentOpenTooltip = null;
+        };
+        cancelBtn.addEventListener('click', cleanup);
+        closeBtn.addEventListener('click', cleanup);
+      }
+    };
+    
+    setupInfoTooltip('info-purchase', 'info-purchase-tooltip');
+    setupInfoTooltip('info-value', 'info-value-tooltip');
+    setupInfoTooltip('info-financials', 'info-tooltip');
 
     // Setup multi-image gallery with existing images and callback
     let imageUrls: string[] = item.imageUrls || [];
@@ -982,6 +1212,7 @@ export class Renderer {
       item.name = (dialog.querySelector('#item-name') as HTMLInputElement).value.trim();
       item.purchasePrice = parseFloat((dialog.querySelector('#item-purchase') as HTMLInputElement).value) || NaN;
       item.currentValue = parseFloat((dialog.querySelector('#item-value') as HTMLInputElement).value) || NaN;
+      item.hideFinancials = !(dialog.querySelector('#item-hide-financials') as HTMLInputElement).checked;
 
       const properties: Record<string, string | number> = {};
       propertiesContainer.querySelectorAll('div').forEach(row => {
@@ -1118,17 +1349,17 @@ export class Renderer {
                 <div><strong>Name:</strong> ${item.name}</div>
                 <button id="edit-item-btn" class="btn-secondary btn-sm">⚙️ Bearbeiten</button>
               </div>
-              ${hasPurchase ? `
+              ${!item.hideFinancials && hasPurchase ? `
                 <div>
                   <strong>Kaufpreis:</strong> ${DataUtils.formatCurrency(item.purchasePrice)}
                 </div>
               ` : ''}
-              ${hasValue ? `
+              ${!item.hideFinancials && hasValue ? `
                 <div>
                   <strong>Aktueller Wert:</strong> ${DataUtils.formatCurrency(item.currentValue)}
                 </div>
               ` : ''}
-              ${!isNaN(profit) ? `
+              ${!item.hideFinancials && !isNaN(profit) ? `
                 <div>
                   <strong>${profitLabel}:</strong>
                   <span style="font-weight: 600; color: ${profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary};">

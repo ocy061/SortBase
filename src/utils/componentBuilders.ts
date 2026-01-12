@@ -169,7 +169,7 @@ export class ComponentBuilders {
    * Mit Bild, Titel, Kategorie und Action-Buttons
    */
   static createListCard(
-    item: { id: string; name: string; category?: string; imageUrl?: string; items?: any[]; sublists?: any[] },
+    item: { id: string; name: string; category?: string; imageUrl?: string; items?: any[]; sublists?: any[]; hideFinancials?: boolean },
     onView: () => void,
     onEdit: () => void,
     onDelete: () => void,
@@ -187,13 +187,16 @@ export class ComponentBuilders {
     const hasProfit = totals.profit !== undefined;
 
     let totalsInfo = '';
-    if (hasPurchase) totalsInfo += `Bezahlt: ${DataUtils.formatCurrency(totals.purchasePrice!)}, `;
-    if (hasValue) totalsInfo += `Wert: ${DataUtils.formatCurrency(totals.currentValue!)}`;
-    if (hasProfit) {
-      const profit = totals.profit!;
-      const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
-      const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
-      totalsInfo += `, <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+    // Nur finanzielle Werte anzeigen wenn hideFinancials nicht true ist
+    if (!item.hideFinancials) {
+      if (hasPurchase) totalsInfo += `Bezahlt: ${DataUtils.formatCurrency(totals.purchasePrice!)}, `;
+      if (hasValue) totalsInfo += `Wert: ${DataUtils.formatCurrency(totals.currentValue!)}`;
+      if (hasProfit) {
+        const profit = totals.profit!;
+        const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
+        const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
+        totalsInfo += `, <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+      }
     }
 
     div.innerHTML = `
@@ -235,7 +238,7 @@ export class ComponentBuilders {
    * Mit Bild, Name, Preis-Informationen und Action-Buttons
    */
   static createItemCard(
-    item: { id: string; name: string; purchasePrice: any; currentValue: any; imageUrls?: string[] },
+    item: { id: string; name: string; purchasePrice: any; currentValue: any; imageUrls?: string[]; hideFinancials?: boolean },
     onView: () => void,
     onEdit: () => void,
     onDelete: () => void,
@@ -251,11 +254,14 @@ export class ComponentBuilders {
     const profitLabel = profit > 0 ? 'Gewinn:' : profit < 0 ? 'Verlust:' : 'Gewinn/Verlust:';
     let priceInfo = '';
 
-    if (hasPurchase) priceInfo += `Bezahlt: ${DataUtils.formatCurrency(item.purchasePrice)}, `;
-    if (hasValue) priceInfo += `Wert: ${DataUtils.formatCurrency(item.currentValue)}`;
-    if (hasBoth) {
-      const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
-      priceInfo += `, <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+    // Nur finanzielle Werte anzeigen wenn hideFinancials nicht true ist
+    if (!item.hideFinancials) {
+      if (hasPurchase) priceInfo += `Bezahlt: ${DataUtils.formatCurrency(item.purchasePrice)}, `;
+      if (hasValue) priceInfo += `Wert: ${DataUtils.formatCurrency(item.currentValue)}`;
+      if (hasBoth) {
+        const profitColor = profit > 0 ? Theme.colors.success : profit < 0 ? Theme.colors.danger : Theme.colors.textSecondary;
+        priceInfo += `, <span style="color: ${profitColor}; font-weight: 600;">${profitLabel} ${profit > 0 ? '+' : ''}${DataUtils.formatCurrency(profit)}</span>`;
+      }
     }
 
     div.className = 'card-tile card-tile--item';
